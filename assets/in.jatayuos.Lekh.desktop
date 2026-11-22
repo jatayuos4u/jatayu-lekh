@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Jatayu Lekh
+Name[hi]=जटायु लेख
+GenericName=Text Editor
+GenericName[hi]=पाठ संपादक
+Exec=jatayu-lekh %F
+Icon=in.jatayuos.Lekh
+Terminal=false
+Categories=Utility;TextEditor;
+MimeType=text/plain;text/markdown;
+StartupNotify=true
