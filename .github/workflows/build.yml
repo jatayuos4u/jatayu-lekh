@@ -17,7 +17,7 @@ jobs:
       - name: Install build dependencies
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends build-essential cmake dpkg-dev git ca-certificates qt6-base-dev libqt6svg6 diffutils libhunspell-1.7-0 hunspell-en-us
+          apt-get install -y --no-install-recommends build-essential cmake dpkg-dev file git ca-certificates qt6-base-dev libqt6svg6 diffutils libhunspell-1.7-0 hunspell-en-us
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
