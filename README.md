@@ -1,61 +1,52 @@
-# Jatayu Lekh 0.2.5 development source
+# Jatayu Lekh
 
-Jatayu Lekh is a dual-mode Qt 6 editor for JatayuOS.
+A lightweight Qt 6 text editor for **JatayuOS**, with a simple Text mode and a Command mode for quick access to editing tools.
 
-## Build and install on Debian 13 or JatayuOS
+## Download
+
+**Stable release v0.2.5** · Debian 13 and JatayuOS · AMD64 (x86-64)
+
+**[Download Jatayu Lekh (.deb)](https://github.com/jatayuos4u/jatayu-lekh/releases/download/v0.2.5/jatayu-lekh_0.2.5_amd64.deb)**
+
+[Release notes and source archives](https://github.com/jatayuos4u/jatayu-lekh/releases/tag/v0.2.5) · [SHA-256 checksums](https://github.com/jatayuos4u/jatayu-lekh/releases/download/v0.2.5/SHA256SUMS)
+
+### Install
+
+Download the package and `SHA256SUMS` into the same folder. Open a terminal in that folder and run:
 
 ```bash
-sudo apt install build-essential cmake dpkg-dev qt6-base-dev \
+sha256sum -c SHA256SUMS &&
+sudo apt install ./jatayu-lekh_0.2.5_amd64.deb
+```
+
+Open **Jatayu Lekh** from the KDE application menu or run `jatayu-lekh`.
+
+## Features
+
+- **Text and Command modes** with shared tabs, split editing, line numbers, and a command palette.
+- **Editing tools** including Find and Replace, English spellcheck, and live word, character, and paragraph counts.
+- **Draft recovery and disk-change review** to recover unsaved work or compare a draft with a file changed by another app.
+- **Markdown preview** beside the source, browser opening for saved HTML, and PDF export through the Print dialog.
+- **Large-file viewer** with search and Follow End for growing logs.
+- **English and Hindi interface and offline user guide.** Press **F1** to open the guide.
+
+## Documentation and support
+
+[English user guide](docs/help-en.md) · [हिन्दी उपयोगकर्ता मार्गदर्शिका](docs/help-hi.md) · [Report a bug](https://github.com/jatayuos4u/jatayu-lekh/issues) · [Report a security issue](SECURITY.md)
+
+## Build from source
+
+```bash
+sudo apt install build-essential cmake dpkg-dev file qt6-base-dev \
   libqt6svg6 diffutils libhunspell-1.7-0 hunspell-en-us
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j2
 ctest --test-dir build --output-on-failure
 cpack --config build/CPackConfig.cmake -B build/packages -G DEB
-sudo apt install "./build/packages/jatayu-lekh_0.2.5_$(dpkg --print-architecture).deb"
 ```
 
-Launch Jatayu Lekh from KDE or run `jatayu-lekh`.
-
-## Changes in 0.2.5
-
-- **Tools → Open HTML in Browser** opens a saved HTML file with your desktop's
-  associated application. HTML rendering stays outside Lekh. Markdown Preview
-  remains available in the editor.
-- File reads reject special files and enforce size limits. Save checks again
-  immediately before the atomic commit to narrow the external-change race.
-- **File → Clear Recovery Data** clears this window's recovery file and old
-  snapshot files after confirmation. Open drafts can be stored again while
-  recovery is enabled. The serialized closed-tab archive is capped at 16 MiB
-  for new additions, and new recovery files are capped at 128 MiB.
-- Personal Dictionary has been removed. Standard English spellcheck,
-  spelling suggestions and optional autocorrect are available.
-- Snapshot commands, the History panel and persistent per-file snapshot
-  creation have been removed. Earlier recovery records remain readable,
-  and old per-file history files are not automatically deleted.
-- Writing Assist has been removed.
-
-## Editor behavior
-
-- Text and Command modes share tabs, editing state and live word, character
-  and paragraph counts. Character totals include spaces and line breaks.
-  Blank lines separate paragraphs.
-- Normal launches start with a blank tab. Use **File → Recover Draft** for
-  unsaved edits or **Settings → Reopen previous tabs on startup**.
-- **File → Review Disk Changes** compares the draft with the on-disk file,
-  reloads it, keeps the draft, or saves a separate copy. The comparison is
-  read-only. Change navigation supports up to 512 Ki UTF-16 code units per side.
-- Choose **Settings → Language → हिन्दी**, then restart. Native system
-  dialogs may use the desktop language.
-- Files larger than 16 MiB open in a read-only UTF-8 viewer with search
-  and **Follow End** for growing logs.
-
-## Help menu links
-
-The English and Hindi user guides open offline from Help or F1. Once the
-repository and its chosen license are published, configure the Help links
-using CMake options `-DLEKH_REPOSITORY_URL=<repository-url>` and
-`-DLEKH_LICENSE_URL=<license-file-url>`. Use an HTTPS GitHub URL for each.
+The resulting package is in `build/packages/`.
 
 ## License
 
-Jatayu Lekh is distributed under the [MIT License](LICENSE).
+Released under the [MIT License](LICENSE). Created by Anup Kumar Yadav for [JatayuOS](https://jatayuos.in/).
