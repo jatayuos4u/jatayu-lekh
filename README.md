@@ -4,11 +4,11 @@ A lightweight Qt 6 text editor for **JatayuOS**, with a simple Text mode and a C
 
 ## Download
 
-**Stable release v0.2.5** · Debian 13 and JatayuOS · AMD64 (x86-64)
+**Stable release v0.2.6** · Debian 13 and JatayuOS · AMD64 (x86-64)
 
-**[Download Jatayu Lekh (.deb)](https://github.com/jatayuos4u/jatayu-lekh/releases/download/v0.2.5/jatayu-lekh_0.2.5_amd64.deb)**
+**[Download Jatayu Lekh (.deb)](https://github.com/jatayuos4u/jatayu-lekh/releases/download/v0.2.6/jatayu-lekh_0.2.6_amd64.deb)**
 
-[Release notes and source archives](https://github.com/jatayuos4u/jatayu-lekh/releases/tag/v0.2.5) · [SHA-256 checksums](https://github.com/jatayuos4u/jatayu-lekh/releases/download/v0.2.5/SHA256SUMS)
+[Release notes and source archives](https://github.com/jatayuos4u/jatayu-lekh/releases/tag/v0.2.6) · [SHA-256 checksums](https://github.com/jatayuos4u/jatayu-lekh/releases/download/v0.2.6/SHA256SUMS)
 
 ### Install
 
@@ -16,7 +16,7 @@ Download the package and `SHA256SUMS` into the same folder. Open a terminal in t
 
 ```bash
 sha256sum -c SHA256SUMS &&
-sudo apt install ./jatayu-lekh_0.2.5_amd64.deb
+sudo apt install ./jatayu-lekh_0.2.6_amd64.deb
 ```
 
 Open **Jatayu Lekh** from the KDE application menu or run `jatayu-lekh`.
