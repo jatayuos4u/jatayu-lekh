@@ -249,6 +249,14 @@ public:
         QDir().mkpath(data);
         fileWatcher = new QFileSystemWatcher(this);
         connect(fileWatcher, &QFileSystemWatcher::fileChanged, this, [this](const QString &path) { diskChanged(path); });
+        connect(fileWatcher, &QFileSystemWatcher::directoryChanged, this, [this](const QString &directory) {
+            const auto watched = fileWatcher->files();
+            for (const auto &item : documents) {
+                if (!item->path.isEmpty() && QFileInfo(item->path).absolutePath() == directory &&
+                    !watched.contains(item->path))
+                    diskChanged(item->path);
+            }
+        });
         const bool privateDirectory = QFileInfo(data).isDir() && !QFileInfo(data).isSymLink() &&
             QFile::setPermissions(data, QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
         for (int slot = 1; privateDirectory; ++slot) {
@@ -508,6 +516,17 @@ public:
             readRegular(documentPath) != std::optional<QByteArray>(QByteArray("original")) ||
             readRegular(documentPath, 3))
             return false;
+        const auto utf8Path = files.filePath("unicode.log");
+        const QString unicode = QString::fromUtf8("Aह🙂Z");
+        const auto utf8 = unicode.toUtf8();
+        if (!writeFile(utf8Path, utf8, true)) return false;
+        QFile utf8File(utf8Path);
+        if (!openRegular(utf8File)) return false;
+        for (qint64 boundary = 1; boundary < utf8.size(); ++boundary) {
+            const auto left = LogWindow::read(utf8File, 0, boundary, utf8.size());
+            const auto right = LogWindow::read(utf8File, boundary, utf8.size(), utf8.size());
+            if (!left || !right || *left + *right != unicode) return false;
+        }
         const auto fifoPath = files.filePath("pipe");
         if (::mkfifo(QFile::encodeName(fifoPath).constData(), 0600) != 0 || readRegular(fifoPath))
             return false;
@@ -826,14 +845,14 @@ private:
                 reviewDisk(d);
                 return false;
             }
-            QMessageBox::warning(this, tr("Save File"), tr("The file could not be saved."));
+            QMessageBox::warning(this, tr("Save File"), tr("The file could not be saved safely. Check the destination permissions or use Save As."));
             return false;
         }
         const auto previousPath = d->path;
         d->path = path;
         d->diskVersion = hash(*bytes);
         d->diskConflict = false;
-        if (previousPath != path && !previousPath.isEmpty()) fileWatcher->removePath(previousPath);
+        if (previousPath != path) unwatch(previousPath);
         watch(d);
         d->editor->document()->setModified(false);
         updateTab(d);
@@ -852,10 +871,11 @@ private:
     void removeDocument(Document *d)
     {
         auto page = d->page;
-        if (!d->path.isEmpty()) fileWatcher->removePath(d->path);
+        const auto previousPath = d->path;
         tabs->removeTab(tabs->indexOf(page));
         documents.erase(std::remove_if(documents.begin(), documents.end(),
             [d](const auto &item) { return item.get() == d; }), documents.end());
+        unwatch(previousPath);
         delete page;
     }
 
@@ -999,8 +1019,26 @@ private:
 
     void watch(Document *d)
     {
-        if (!d->path.isEmpty() && QFileInfo::exists(d->path) && !fileWatcher->files().contains(d->path))
-            fileWatcher->addPath(d->path);
+        if (d->path.isEmpty()) return;
+        const QFileInfo info(d->path);
+        const auto directory = info.absolutePath();
+        const bool directoryWatched = fileWatcher->directories().contains(directory) ||
+            fileWatcher->addPath(directory);
+        const bool fileWatched = info.isFile() && (fileWatcher->files().contains(d->path) ||
+            fileWatcher->addPath(d->path));
+        if (!directoryWatched || (info.isFile() && !fileWatched))
+            statusBar()->showMessage(tr("Could not fully monitor %1 for external changes.").arg(title(d)), 8000);
+    }
+
+    void unwatch(const QString &path)
+    {
+        if (path.isEmpty()) return;
+        if (fileWatcher->files().contains(path)) fileWatcher->removePath(path);
+        const auto directory = QFileInfo(path).absolutePath();
+        for (const auto &item : documents)
+            if (!item->path.isEmpty() && QFileInfo(item->path).absolutePath() == directory)
+                return;
+        if (fileWatcher->directories().contains(directory)) fileWatcher->removePath(directory);
     }
 
     void diskChanged(const QString &path)
@@ -1065,6 +1103,8 @@ private:
             if (QFileInfo(path).absoluteFilePath() == d->path || QFileInfo(path).canonicalFilePath() == d->path ||
                 !encoded || !writeFile(path, *encoded))
                 QMessageBox::warning(this, tr("Save a Copy"), tr("Choose a different writable location and a compatible encoding."));
+            else
+                statusBar()->showMessage(tr("Copy saved to %1").arg(QDir::toNativeSeparators(path)), 6000);
         }
     }
 
@@ -1132,8 +1172,11 @@ private:
     {
         if (statePath.isEmpty()) return;
         const auto bytes = readRegular(statePath, recoveryLimit);
-        if (bytes) readSession(QJsonDocument::fromJson(*bytes).object(), restoreTabs);
-        else if (QFileInfo::exists(statePath)) {
+        const auto session = bytes ? QJsonDocument::fromJson(*bytes) : QJsonDocument();
+        if (session.isObject() && session.object().value("documents").isArray() &&
+            session.object().value("archive").isArray()) {
+            readSession(session.object(), restoreTabs);
+        } else if (QFileInfo::exists(statePath)) {
             sessionEnabled = false;
             QMessageBox::warning(this, tr("Recover Draft"),
                 tr("The previous recovery file could not be read. Recovery was paused to preserve it."));
@@ -1688,7 +1731,7 @@ int main(int argc, char **argv)
     }
     QCoreApplication::setOrganizationName("JatayuOS");
     QCoreApplication::setApplicationName(smoke ? "Jatayu Lekh Test" : "Jatayu Lekh");
-    QCoreApplication::setApplicationVersion("0.2.5");
+    QCoreApplication::setApplicationVersion("0.2.6");
     QApplication::setDesktopFileName("in.jatayuos.Lekh");
     HindiTranslator hindi;
     if (QSettings().value("language", "en").toString() == "hi")
