@@ -516,6 +516,7 @@ public:
             readRegular(documentPath) != std::optional<QByteArray>(QByteArray("original")) ||
             readRegular(documentPath, 3))
             return false;
+        if (!testFileWatch(documentPath)) return false;
         const auto utf8Path = files.filePath("unicode.log");
         const QString unicode = QString::fromUtf8("Aह🙂Z");
         const auto utf8 = unicode.toUtf8();
@@ -1015,6 +1016,37 @@ private:
         if (!ok) return;
         d->editor->setTextCursor(QTextCursor(d->editor->document()->findBlockByNumber(line - 1)));
         d->editor->centerCursor();
+    }
+
+    bool testFileWatch(const QString &path)
+    {
+        auto waitFor = [](const std::function<bool()> &condition) {
+            QEventLoop loop;
+            QTimer poll;
+            connect(&poll, &QTimer::timeout, &loop, [&] {
+                if (condition()) loop.quit();
+            });
+            poll.start(10);
+            QTimer::singleShot(3000, &loop, &QEventLoop::quit);
+            if (!condition()) loop.exec();
+            return condition();
+        };
+
+        auto d = addDocument("original", path);
+        d->diskVersion = hash(QByteArray("original"));
+        watch(d);
+        const auto backup = path + ".renamed";
+        const bool passed = fileWatcher->files().contains(path) &&
+            QFile::rename(path, backup) &&
+            waitFor([&] { return d->diskConflict; }) &&
+            writeFile(path, "original", true) &&
+            waitFor([&] { return !d->diskConflict && fileWatcher->files().contains(path); }) &&
+            writeFile(path, "external edit", true) &&
+            waitFor([&] { return d->diskConflict; }) &&
+            d->editor->toPlainText() == "original";
+        removeDocument(d);
+        if (!passed) qWarning("File watcher rename/recreate regression test failed");
+        return passed;
     }
 
     void watch(Document *d)
